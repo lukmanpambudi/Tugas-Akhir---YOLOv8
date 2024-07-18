@@ -1,3 +1,4 @@
+#utils untuk jetson-GPIO
 import cv2
 import numpy as np
 import torch
@@ -5,6 +6,8 @@ import time
 import serial 
 import csv
 import time
+import Jetson.GPIO as GPIO
+
 # from datetime import datetime
 
 esp_ser = serial.Serial(
@@ -30,6 +33,10 @@ last_detected_movement = None
 
 detected_jalur = False
 detected_ujung_jalur = False
+
+# Setup GPIO
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(4, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 # Fungsi untuk mendapatkan nama file CSV berdasarkan waktu saat ini
 def get_csv_filename():
@@ -269,7 +276,8 @@ def isEndOfLane(results, model, frameWarp, display=True):
             kirimData(esp_ser, error, None, None)
 
             # Tulis ke CSV
-            write_to_csv(csv_filename, error, delta_error)
+            if GPIO.input(4) == GPIO.LOW:
+                write_to_csv(csv_filename, error, delta_error)
 
             # Simpan error saat ini untuk frame berikutnya
             prev_error = error
