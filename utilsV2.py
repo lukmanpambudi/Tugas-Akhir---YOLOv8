@@ -4,7 +4,8 @@ import torch
 import time 
 import serial 
 import csv
-# import os
+import time
+# from datetime import datetime
 
 esp_ser = serial.Serial(
     port = '/dev/ttyUSB0',
@@ -30,18 +31,10 @@ last_detected_movement = None
 detected_jalur = False
 detected_ujung_jalur = False
 
-# Fungsi untuk mencari nama file yang tersedia
-# def find_available_filename(base_filename):
-#     counter = 1
-#     while True:
-#         new_filename = f"{base_filename}_{counter}.csv"
-#         if not os.path.exists(new_filename):
-#             return new_filename
-#         counter += 1
-
-# Path untuk menyimpan file CSV
-# base_csv_filename = 'data.csv'
-csv_filename = '/home/pambudi/Yolov8/data/data.csv'
+# Fungsi untuk mendapatkan nama file CSV berdasarkan waktu saat ini
+def get_csv_filename():
+    current_time = time.strftime('%H:%M_%d%b.csv')
+    return f'/home/pambudi/Yolov8/data/data_{current_time}'
 
 # Fungsi untuk menulis header CSV
 def write_csv_header(filename):
@@ -61,6 +54,10 @@ def write_to_csv(filename, error, delta_error):
 
         # Menulis baris baru ke CSV
         writer.writerow({'Timestamp': timestamp, 'Error': error, 'Delta Error': delta_error})
+
+
+# Mendapatkan nama file CSV berdasarkan waktu saat ini
+csv_filename = get_csv_filename()
 
 write_csv_header(csv_filename)
 
