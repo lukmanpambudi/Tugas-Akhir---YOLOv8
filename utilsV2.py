@@ -1,4 +1,5 @@
-#utils untuk jetson-GPIO
+#util untuk tambahan GPIO.
+# GPIO berasal dari ch_5 RC digunakan untuk: ketika ch_5 > 1500 maka GPIO 4 HIGH dan akan menulis data atau nilai ke .csv
 import cv2
 import numpy as np
 import torch
@@ -7,8 +8,6 @@ import serial
 import csv
 import time
 import Jetson.GPIO as GPIO
-
-# from datetime import datetime
 
 esp_ser = serial.Serial(
     port = '/dev/ttyUSB0',
@@ -46,22 +45,21 @@ def get_csv_filename():
 # Fungsi untuk menulis header CSV
 def write_csv_header(filename):
     with open(filename, 'w', newline='') as csvfile:
-        fieldnames = ['Timestamp', 'Error', 'Delta Error']
+        fieldnames = ['Timestamp', 'Class', 'FPS', 'Error', 'Delta Error']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
-# Fungsi untuk menulis nilai error dan delta error ke dalam CSV
-def write_to_csv(filename, error, delta_error):
+# Fungsi untuk menulis nilai error, delta error, dan kelas yang dideteksi ke dalam CSV
+def write_to_csv(filename, detected_class, fps, error, delta_error):
     with open(filename, 'a', newline='') as csvfile:
-        fieldnames = ['Timestamp', 'Error', 'Delta Error']
+        fieldnames = ['Timestamp', 'Class', 'FPS', 'Error', 'Delta Error']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         # Waktu saat ini
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
 
         # Menulis baris baru ke CSV
-        writer.writerow({'Timestamp': timestamp, 'Error': error, 'Delta Error': delta_error})
-
+        writer.writerow({'Timestamp': timestamp, 'Class': detected_class, 'FPS': fps, 'Error': error, 'Delta Error': delta_error})
 
 # Mendapatkan nama file CSV berdasarkan waktu saat ini
 csv_filename = get_csv_filename()
@@ -273,11 +271,22 @@ def isEndOfLane(results, model, frameWarp, display=True):
 
             print("Delta Error: ", delta_error)
 
+            # Simpan error saat ini untuk frame berikutnya
+            prev_error = error
+
             kirimData(esp_ser, error, None, None)
 
             # Tulis ke CSV
-            if GPIO.input(4) == GPIO.LOW:
-                write_to_csv(csv_filename, error, delta_error)
+            # write_to_csv(csv_filename, error, delta_error, 'jalur')
+            # print(f"Error: {error}, Delta Error: {delta_error}")
+
+            # Hitung FPS
+            current_time = time.time()
+            fps = 1 / (current_time - isEndOfLane.last_time) if hasattr(isEndOfLane, 'last_time') else 0
+            isEndOfLane.last_time = current_time
+
+            if GPIO.input(4) == GPIO.HIGH:
+                write_to_csv(csv_filename, clss, fps, error, delta_error)
 
             # Simpan error saat ini untuk frame berikutnya
             prev_error = error
