@@ -181,7 +181,7 @@ void setup() {
   addFuzzyRule(11, Kiri_Tajam, Delta_Kanan_Tajam, RightSedang, LeftPelan);
   addFuzzyRule(12, Kiri, Delta_Kiri_Tajam, RightSedang, LeftPelan);
   addFuzzyRule(13, Kiri, Delta_Kiri, RightSedang, LeftPelan);
-  addFuzzyRule(14, Kiri, Delta_Lurus, RightSedang, LeftPelan);
+  addFuzzyRule(14, Kiri, Delta_Lurus, RightSedang, LeftPelan); 
   addFuzzyRule(15, Kiri, Delta_Kanan_Tajam, RightSedang, LeftPelan);
   addFuzzyRule(16, Lurus, Delta_Kiri_Tajam, RightSedang, LeftPelan);
   //////////////// Kanan
