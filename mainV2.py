@@ -7,7 +7,7 @@ import time
 last_mask_time = time.time()
 
 def getLane(results, display=2):
-    global last_mask_time
+    global last_mask_time, frame, tampilResults
     frameCopy = frame.copy()
 
     mask_np = utilsV2.masking(results)
@@ -30,26 +30,15 @@ def getLane(results, display=2):
             return
         else: 
             print("ada nilai processed image")
-            
 
         if display == 1:
             stack_img = utilsV2.stackImages(0.7, ([tampilResults, frameWarpPoints], [mask_np, frameWarp]))
             cv2.imshow('Stacked Image', stack_img)
             cv2.imshow('Processed Image', processedImage)
-
-
         elif display == 2:
-            # cv2.imshow("Result Instance Segmentation", tampilResults)
             stack_img = utilsV2.stackImages(0.7, ([frameWarpPoints, mask_np], [frameWarp, processedImage]))
             cv2.imshow('Stacked Image', stack_img)
-            
-            # cv2.imshow('Masking', mask_np)
-            # cv2.imshow('Warp', frameWarp)
-            
-
-
     else:
-        # Tutup window jika tidak ada nilai baru dalam 10 detik
         current_time = time.time()
         if current_time - last_mask_time > 15:
             if cv2.getWindowProperty("Masking", cv2.WND_PROP_VISIBLE) > 0:
@@ -65,24 +54,23 @@ def getLane(results, display=2):
             if cv2.getWindowProperty("Result Instance Segmentation", cv2.WND_PROP_VISIBLE) > 0:
                 cv2.destroyWindow("Result Instance Segmentation")
 
-
-if __name__ == '__main__':
-    # model = YOLO("/home/pambudi/Yolov8/model/YOLO8n/YOLO8n_6Juli.pt")
-    model = YOLO("/home/pambudi/Yolov8/model/YOLO8n/YOLO8n_13Juli.pt")
-    # model = YOLO("/home/pambudi/Yolov8/model/YOLO8n/best4juni_416.pt")
+if __name__ == '__main__': 
+    # model = YOLO("/home/pambudi/Yolov8/model/YOLO8n/bestYOLO8n_22Juliv2.pt")
+    model = YOLO("/home/pambudi/Yolov8/model/YOLO8n/best23Juli_v2.pt")
     video_path = ("/home/pambudi/Yolov8/model/WIN_20240530_16_26_19_Pro.mp4")
-    # video_path = ("/home/pambudi/Yolov8/model/EndTrack.mp4")
 
-    cap = cv2.VideoCapture(video_path)    
+    cap = cv2.VideoCapture(video_path)  
     # cap = cv2.VideoCapture(2)    
     if not cap.isOpened():
         print("Gagal membuka video.")
         exit()
     initializeTrackBarVals = [8, 128, 0, 179]
-    # initializeTrackBarVals = [8, 136, 0, 179]
     utilsV2.initializeTrackbars(initializeTrackBarVals)
     frameCounter = 0
-
+    
+    # Initialize VideoWriter object for MP4 format
+    # fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    # out = cv2.VideoWriter('/home/pambudi/Yolov8/Data/output1.mp4', fourcc, 20.0, (512, 256))
     
     while True:
         frameCounter += 1
@@ -95,14 +83,19 @@ if __name__ == '__main__':
             print("Gagal membaca frame dari video.")
             break
         
-        frame = utilsV2.tambahkan_bingkai(video)
-        frame = cv2.resize(frame, (512, 256))
-        # results = model(frame, imgsz=416, conf=0.5)
+        # frame = utilsV2.tambahkan_bingkai(video)
+        frame = cv2.resize(video, (512, 256))
         results = model(frame, imgsz=416, conf=0.5)
         tampilResults = results[0].plot()
         getLane(results, display=2)
+        
+        # Write the frame to the output video file
+        # out.write(tampilResults)  
+        
         cv2.imshow("Result Instance Segmentation", tampilResults)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
+    
     cap.release()
+    # out.release()
     cv2.destroyAllWindows()
