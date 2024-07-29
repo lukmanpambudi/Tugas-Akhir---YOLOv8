@@ -1,5 +1,3 @@
-#util untuk tambahan GPIO.
-# GPIO berasal dari ch_5 RC digunakan untuk: ketika ch_5 > 1500 maka GPIO 4 HIGH dan akan menulis data atau nilai ke .csv
 import cv2
 import numpy as np
 import torch
@@ -7,7 +5,7 @@ import time
 import serial 
 import csv
 import time
-import Jetson.GPIO as GPIO
+# import Jetson.GPIO as GPIO
 
 esp_ser = serial.Serial(
     port = '/dev/ttyUSB0',
@@ -34,37 +32,38 @@ detected_jalur = False
 detected_ujung_jalur = False
 
 # Setup GPIO
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(4, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+# GPIO.setmode(GPIO.BCM)
+# GPIO.setup(4, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 # Fungsi untuk mendapatkan nama file CSV berdasarkan waktu saat ini
-def get_csv_filename():
-    current_time = time.strftime('%H:%M_%d%b.csv')
-    return f'/home/pambudi/Yolov8/data/data_{current_time}'
+# Generate CSV untuk data General
 
-# Fungsi untuk menulis header CSV
-def write_csv_header(filename):
+def get_csv_filename(directory, prefix):
+    current_time = time.strftime('%H:%M_%d%b.csv')
+    return f'{directory}/{prefix}_{current_time}'
+
+def write_csv_header(filename, fieldnames):
     with open(filename, 'w', newline='') as csvfile:
-        fieldnames = ['Timestamp', 'Class', 'FPS', 'Error', 'Delta Error']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
-# Fungsi untuk menulis nilai error, delta error, dan kelas yang dideteksi ke dalam CSV
-def write_to_csv(filename, detected_class, fps, error, delta_error):
+def write_to_csv(filename, fieldnames, clss, confidence, fps, error, delta_error):
     with open(filename, 'a', newline='') as csvfile:
-        fieldnames = ['Timestamp', 'Class', 'FPS', 'Error', 'Delta Error']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        # Waktu saat ini
-        timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-
-        # Menulis baris baru ke CSV
-        writer.writerow({'Timestamp': timestamp, 'Class': detected_class, 'FPS': fps, 'Error': error, 'Delta Error': delta_error})
+        timestamp = time.strftime('%S')
+        writer.writerow({'Timestamp': timestamp, 'Class': clss, 'Confidence Score': confidence, 'FPS': f"{fps:.2f}", 'Error': error, 'Delta Error': delta_error})
 
 # Mendapatkan nama file CSV berdasarkan waktu saat ini
-csv_filename = get_csv_filename()
+csv_filename_general = get_csv_filename('/home/pambudi/Yolov8/Data/General', 'data')
+csv_filename_model = get_csv_filename('/home/pambudi/Yolov8/Data/DataModel', 'data')
 
-write_csv_header(csv_filename)
+# Header untuk kedua file CSV
+fieldnames = ['Timestamp', 'Class', 'Confidence Score', 'FPS', 'Error', 'Delta Error']
+
+# Menulis header ke kedua file CSV
+write_csv_header(csv_filename_general, fieldnames)
+write_csv_header(csv_filename_model, fieldnames)     
+
 
 def tambahkan_bingkai(video, lebar_bingkai_vertikal=128, tinggi_bingkai_horizontal=64):
     h, w, _ = video.shape
@@ -90,7 +89,6 @@ def tambahkan_bingkai(video, lebar_bingkai_vertikal=128, tinggi_bingkai_horizont
     
     return frame_dengan_bingkai
 
-
 def masking(results):
     all_masks = None
 
@@ -112,10 +110,8 @@ def masking(results):
 
             all_masks += class_mask
 
-
     if all_masks is None:
         return None
-
     all_masks *= 255
     all_masks = all_masks.to('cpu')  # Memindahkan tensor ke CPU
     mask_np = all_masks.numpy().astype('uint8')
@@ -123,7 +119,6 @@ def masking(results):
     # mask_np = cv2.resize(mask_np, (480, 240))
 
     return mask_np
-
 
 def warping(frame, points, w, h, inv=False):
     points1 = np.float32(points)
@@ -136,10 +131,8 @@ def warping(frame, points, w, h, inv=False):
     frameWarp = cv2.warpPerspective(frame, matrix, (w, h))
     return frameWarp
 
-
 def nothing(a):
     pass
-
 
 def initializeTrackbars(intialTracbarVals, wT=512, hT=256):
 # def initializeTrackbars(intialTracbarVals, wT=480, hT=240):
@@ -155,7 +148,6 @@ def initializeTrackbars(intialTracbarVals, wT=512, hT=256):
     cv2.createTrackbar("Height Bottom", "Trackbars",
                        intialTracbarVals[3], hT, nothing)
 
-
 def valTrackbars(wT=512, hT=256):
 # def valTrackbars(wT=480, hT=240):
     widthTop = cv2.getTrackbarPos("Width Top", "Trackbars")
@@ -166,14 +158,12 @@ def valTrackbars(wT=512, hT=256):
                          (widthBottom, heightBottom), (wT-widthBottom, heightBottom)])
     return points
 
-
 def drawPoints(frame, points):
     for x in range(4):
         cv2.circle(frame, (int(points[x][0]), int(
             points[x][1])), 8, (0, 0, 255), cv2.FILLED)
     return frame
     
-
 def stackImages(scale, imgArray):
     rows = len(imgArray)
     cols = len(imgArray[0])
@@ -211,7 +201,8 @@ def stackImages(scale, imgArray):
         hor = np.hstack(imgArray)
         ver = hor
     return ver
- 
+
+
 def isEndOfLane(results, model, frameWarp, display=True):
     global prev_error, start_detection_time, ujung_jalur_detected, turn_movement, straight_movement, last_detected_movement, detected_jalur, detected_ujung_jalur, last_detection_time
 
@@ -219,16 +210,24 @@ def isEndOfLane(results, model, frameWarp, display=True):
     detected_jalur = False
     detected_ujung_jalur = False
 
+    current_time = time.time()
+    fps = 1 / (current_time - isEndOfLane.last_time) if hasattr(isEndOfLane, 'last_time') else 0
+    isEndOfLane.last_time = current_time
+
+    org_fps = (300, 30)
+    text_fps = f"FPS: {fps:.2f}"
+
     for r in results:
-        for classes in r.boxes.cls:
-            clss = names[int(classes)]
-            print("class yg dideteksi: ", clss)
+        for box in r.boxes:
+            clss = names[int(box.cls)]
+            confidence = box.conf
 
             if clss == 'track':
                 detected_jalur = True
+                write_to_csv(csv_filename_model, fieldnames, clss, confidence, fps, 0, 0)
             elif clss == 'end-track':
                 detected_ujung_jalur = True
-
+                write_to_csv(csv_filename_model, fieldnames, clss, confidence, fps, 0, 0)
     current_time = time.time()
 
     if detected_jalur and not detected_ujung_jalur:
@@ -274,22 +273,22 @@ def isEndOfLane(results, model, frameWarp, display=True):
             # Simpan error saat ini untuk frame berikutnya
             prev_error = error
 
+            # current_time = time.time()
+            # fps = 1 / (current_time - isEndOfLane.last_time) if hasattr(isEndOfLane, 'last_time') else 0
+            # isEndOfLane.last_time = current_time
+
+            # org_fps = (300, 30)
+            # text_fps = f"FPS: {fps:.2f}"
+
             kirimData(esp_ser, error, None, None)
 
-            # Tulis ke CSV
-            # write_to_csv(csv_filename, error, delta_error, 'jalur')
-            # print(f"Error: {error}, Delta Error: {delta_error}")
 
-            # Hitung FPS
-            current_time = time.time()
-            fps = 1 / (current_time - isEndOfLane.last_time) if hasattr(isEndOfLane, 'last_time') else 0
-            isEndOfLane.last_time = current_time
+            # write_to_csv(csv_filename_general, fieldnames, clss, confidence, fps, error, delta_error)
+            # Simpan hasil ke file CSV
+            write_to_csv(csv_filename_general, fieldnames, clss, confidence, fps, error, delta_error)
 
-            if GPIO.input(4) == GPIO.HIGH:
-                write_to_csv(csv_filename, clss, fps, error, delta_error)
-
-            # Simpan error saat ini untuk frame berikutnya
-            prev_error = error
+            # if GPIO.input(4) == GPIO.HIGH:
+            #     write_to_csv(csv_filename, clss, fps, error, delta_error)
 
             # Simpan histori pergerakan terakhir
             if turn_movement or straight_movement:
@@ -341,12 +340,12 @@ def isEndOfLane(results, model, frameWarp, display=True):
                 org_error = (10, 60)
                 text_error = f"Error: {error}"
 
-                current_time = time.time()
-                fps = 1 / (current_time - isEndOfLane.last_time) if hasattr(isEndOfLane, 'last_time') else 0
-                isEndOfLane.last_time = current_time
+                # current_time = time.time()
+                # fps = 1 / (current_time - isEndOfLane.last_time) if hasattr(isEndOfLane, 'last_time') else 0
+                # isEndOfLane.last_time = current_time
 
-                org_fps = (300, 30)
-                text_fps = f"FPS: {fps:.2f}"
+                # org_fps = (300, 30)
+                # text_fps = f"FPS: {fps:.2f}"
                 
                 cv2.putText(frameWarpCopy_bgr, text, org, font, font_scale, font_color, font_thickness)
                 cv2.putText(frameWarpCopy_bgr, text_error, org_error, font, font_scale, font_color, font_thickness)
@@ -358,7 +357,7 @@ def isEndOfLane(results, model, frameWarp, display=True):
             return frameWarpCopy_bgr
 
     elif detected_jalur and detected_ujung_jalur:
-        print('jalur dan uj')
+        print('track dan end-tarck')
         UJ = "MD\n"
         kirimData(esp_ser, None, None, UJ)
 
@@ -399,7 +398,6 @@ def isEndOfLane(results, model, frameWarp, display=True):
                     last_detection_time = None
             else:
                 print("Selisih waktu belum mencapai 2,2 detik. Tidak mengirim data last detected movement.")
-
 
 def kirimData(esp_ser, error, last_detected_movement, UJ):
     global detected_jalur, detected_ujung_jalur
