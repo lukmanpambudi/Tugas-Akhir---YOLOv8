@@ -1,11 +1,8 @@
-  #include <IBusBM.h>
+#include <IBusBM.h>
 #include <Fuzzy.h>
-
 IBusBM IBus;
 
 int otomatis = 14;
-
-// Pake driver sek iso maju tok
 int motorRightPin1 = 12;
 int motorRightPin2 = 13;
 
@@ -25,7 +22,7 @@ int ledKuning = 32;
 int ledHijau = 33;
 
 ///durasi belok
-int turnDuration = 4000;
+int turnDuration = 75 00;
 //durasi maju
 int fwdDuration = 1500;
 
@@ -51,47 +48,33 @@ Fuzzy *fuzzy = new Fuzzy();
 
 // Input membership function untuk error
 // Jika error > 15 maka termasuk membership kanan
-//FuzzySet *Kiri_Tajam = new FuzzySet(-60, -60, -20, -15);
-//FuzzySet *Kiri = new FuzzySet(-25, -20, -15, -10);
-//FuzzySet *Lurus = new FuzzySet(-15, -10, 10, 15);
-//FuzzySet *Kanan = new FuzzySet(10, 15, 20, 25);
-//FuzzySet *Kanan_Tajam = new FuzzySet(20, 25, 60, 60);
+FuzzySet *Kiri_Tajam = new FuzzySet(-100, -100, -25, -20);
+FuzzySet *Kiri = new FuzzySet(-25, -20, -15, -10);
+FuzzySet *Lurus = new FuzzySet(-15, -10, 10, 15);
+FuzzySet *Kanan = new FuzzySet(10, 15, 20, 25);
+FuzzySet *Kanan_Tajam = new FuzzySet(20, 25, 100, 100);
 
 //// Input membership function untuk delta_error
-//FuzzySet *Delta_Kiri_Tajam = new FuzzySet(-60, -60, -20, -15);
-//FuzzySet *Delta_Kiri = new FuzzySet(-25, -20, -15, -10);
-//FuzzySet *Delta_Lurus = new FuzzySet(-15, -10, 10, 15);
-//FuzzySet *Delta_Kanan = new FuzzySet(10, 15, 20, 25);
-//FuzzySet *Delta_Kanan_Tajam = new FuzzySet(20, 25, 60, 60);
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// Jika error > 10 maka termasuk membership kanan
-FuzzySet *Kiri_Tajam = new FuzzySet(-60, -60, -20, -15);
-FuzzySet *Kiri = new FuzzySet(-20, -15, -10, -5);
-FuzzySet *Lurus = new FuzzySet(-10, -5, 5, 10);
-FuzzySet *Kanan = new FuzzySet(5, 10, 15, 20);
-FuzzySet *Kanan_Tajam = new FuzzySet(15, 20, 60, 60);
-
-//// Input membership function untuk delta_error
-FuzzySet *Delta_Kiri_Tajam = new FuzzySet(-60, -60, -20, -15);
-FuzzySet *Delta_Kiri = new FuzzySet(-20, -15, -10, -5);
-FuzzySet *Delta_Lurus = new FuzzySet(-10, -5, 5, 10);
-FuzzySet *Delta_Kanan = new FuzzySet(5, 10, 15, 20);
-FuzzySet *Delta_Kanan_Tajam = new FuzzySet(15, 20, 60, 60);
+FuzzySet *Delta_Kiri_Tajam = new FuzzySet(-100, -100, -25, -20);
+FuzzySet *Delta_Kiri = new FuzzySet(-25, -20, -15, -10);
+FuzzySet *Delta_Lurus = new FuzzySet(-15, -10, 10, 15);
+FuzzySet *Delta_Kanan = new FuzzySet(10, 15, 20, 25);
+FuzzySet *Delta_Kanan_Tajam = new FuzzySet(20, 25, 100, 100);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//// Output membership function (kecepatan motor kanan)
-//FuzzySet *RightStop = new FuzzySet(0, 0, 5, 10);
-FuzzySet *RightPelan = new FuzzySet(0, 0, 20, 40);
-FuzzySet *RightSedang = new FuzzySet(20, 40, 60, 80);
-FuzzySet *RightCepat = new FuzzySet(60, 80, 100, 120);
+// Output membership function (kecepatan motor kanan)
+FuzzySet *RightStop = new FuzzySet(0, 5, 15, 20);
+FuzzySet *RightPelan = new FuzzySet(15, 20, 30, 35);
+FuzzySet *RightSedang = new FuzzySet(30, 35, 45, 55);
+FuzzySet *RightCepat = new FuzzySet(45, 55, 65, 70);
+FuzzySet *RightMax = new FuzzySet(65, 70, 80, 85);
 
-
-//// Output membership function (kecepatan motor kiri)
-//FuzzySet *LeftStop = new FuzzySet(0, 0, 0.5, 1);
-FuzzySet *LeftPelan = new FuzzySet(0, 0, 20, 40);
-FuzzySet *LeftSedang = new FuzzySet(20, 40, 60, 80);
-FuzzySet *LeftCepat = new FuzzySet(60, 80, 100, 120);
+// Output membership function (kecepatan motor kiri)
+FuzzySet *LeftStop = new FuzzySet(0, 5, 15, 20);
+FuzzySet *LeftPelan = new FuzzySet(15, 20, 30, 35);
+FuzzySet *LeftSedang = new FuzzySet(30, 35, 45, 55);
+FuzzySet *LeftCepat = new FuzzySet(45, 55, 65, 70);
+FuzzySet *LeftMax = new FuzzySet(65, 70, 80, 85);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -154,46 +137,50 @@ void setup() {
 
   // Menambahkan FuzzyOutput untuk motor kanan dan kiri
   FuzzyOutput *MotorKanan = new FuzzyOutput(1); // Output 1 untuk Motor Kanan
+  MotorKanan->addFuzzySet(RightStop);
   MotorKanan->addFuzzySet(RightPelan);
   MotorKanan->addFuzzySet(RightSedang);
   MotorKanan->addFuzzySet(RightCepat);
+  MotorKanan->addFuzzySet(RightMax);
   fuzzy->addFuzzyOutput(MotorKanan);
 
   FuzzyOutput *MotorKiri = new FuzzyOutput(2);
+  MotorKiri->addFuzzySet(LeftStop);
   MotorKiri->addFuzzySet(LeftPelan);
   MotorKiri->addFuzzySet(LeftSedang);
   MotorKiri->addFuzzySet(LeftCepat);
+  MotorKiri->addFuzzySet(LeftMax);
   fuzzy->addFuzzyOutput(MotorKiri);
 
   // Menambahkan aturan fuzzy menggunakan fungsi
-  addFuzzyRule(1, Kiri_Tajam, Delta_Kiri_Tajam, RightCepat, LeftPelan); //Kiri_Tajam
-  addFuzzyRule(2, Kanan_Tajam, Delta_Kanan_Tajam, RightPelan, LeftCepat); //Kanan_Tajam
+  addFuzzyRule(1, Kiri_Tajam, Delta_Kiri_Tajam, RightMax, LeftPelan); //Kiri_Tajam
+  addFuzzyRule(2, Kanan_Tajam, Delta_Kanan_Tajam, RightPelan, LeftMax); //Kanan_Tajam
   //////////////// Lurus
-  addFuzzyRule(3, Kiri, Delta_Kanan_Tajam, RightSedang, LeftSedang);
+  addFuzzyRule(3, Kiri, Delta_Kanan_Tajam, RightSedang, LeftPelan);
   addFuzzyRule(4, Lurus, Delta_Kiri, RightSedang, LeftSedang);
   addFuzzyRule(5, Lurus, Delta_Lurus, RightSedang, LeftSedang);
   addFuzzyRule(6, Lurus, Delta_Kanan, RightSedang, LeftSedang);
   addFuzzyRule(7, Kanan, Delta_Kiri_Tajam, RightSedang, LeftSedang);
   //////////////// Kiri
-  addFuzzyRule(8, Kiri_Tajam, Delta_Kiri, RightCepat, LeftPelan); //Belok Kiri Tajam
-  addFuzzyRule(9, Kiri_Tajam, Delta_Lurus, RightCepat, LeftPelan); //Belok Kiri Tajam
-  addFuzzyRule(10, Kiri_Tajam, Delta_Kanan, RightSedang, LeftPelan);
-  addFuzzyRule(11, Kiri_Tajam, Delta_Kanan_Tajam, RightSedang, LeftPelan);
-  addFuzzyRule(12, Kiri, Delta_Kiri_Tajam, RightSedang, LeftPelan);
-  addFuzzyRule(13, Kiri, Delta_Kiri, RightSedang, LeftPelan);
-  addFuzzyRule(14, Kiri, Delta_Lurus, RightSedang, LeftPelan); 
-  addFuzzyRule(15, Kiri, Delta_Kanan_Tajam, RightSedang, LeftPelan);
-  addFuzzyRule(16, Lurus, Delta_Kiri_Tajam, RightSedang, LeftPelan);
+  addFuzzyRule(8, Kiri_Tajam, Delta_Kiri, RightMax, LeftPelan); //Belok Kiri Tajam
+  addFuzzyRule(9, Kiri_Tajam, Delta_Lurus, RightMax, LeftPelan); //Belok Kiri Tajam
+  addFuzzyRule(10, Kiri_Tajam, Delta_Kanan, RightCepat, LeftStop);
+  addFuzzyRule(11, Kiri_Tajam, Delta_Kanan_Tajam, RightCepat, LeftStop);
+  addFuzzyRule(12, Kiri, Delta_Kiri_Tajam, RightCepat, LeftStop);
+  addFuzzyRule(13, Kiri, Delta_Kiri, RightCepat, LeftStop);
+  addFuzzyRule(14, Kiri, Delta_Lurus, RightCepat, LeftStop);
+  addFuzzyRule(15, Kiri, Delta_Kanan_Tajam, RightCepat, LeftStop);
+  addFuzzyRule(16, Lurus, Delta_Kiri_Tajam, RightCepat, LeftStop);
   //////////////// Kanan
-  addFuzzyRule(17, Lurus, Delta_Kanan_Tajam, RightPelan, LeftSedang);
-  addFuzzyRule(18, Kanan, Delta_Kiri, RightPelan, LeftSedang);
-  addFuzzyRule(19, Kanan, Delta_Lurus, RightPelan, LeftSedang);
-  addFuzzyRule(20, Kanan, Delta_Kanan, RightPelan, LeftSedang);
-  addFuzzyRule(21, Kanan, Delta_Kanan_Tajam, RightPelan, LeftSedang);
-  addFuzzyRule(22, Kanan_Tajam, Delta_Kiri_Tajam, RightPelan, LeftSedang);
-  addFuzzyRule(23, Kanan_Tajam, Delta_Kiri, RightPelan, LeftSedang);
-  addFuzzyRule(24, Kanan_Tajam, Delta_Lurus, RightPelan, LeftCepat); //belok kanan tajam
-  addFuzzyRule(25, Kanan_Tajam, Delta_Kanan, RightPelan, LeftCepat); //belok kanan tajam
+  addFuzzyRule(17, Lurus, Delta_Kanan_Tajam, RightStop, LeftCepat);
+  addFuzzyRule(18, Kanan, Delta_Kiri, RightStop, LeftCepat);
+  addFuzzyRule(19, Kanan, Delta_Lurus, RightStop, LeftCepat);
+  addFuzzyRule(20, Kanan, Delta_Kanan, RightStop, LeftCepat);
+  addFuzzyRule(21, Kanan, Delta_Kanan_Tajam, RightStop, LeftCepat);
+  addFuzzyRule(22, Kanan_Tajam, Delta_Kiri_Tajam, RightStop, LeftCepat);
+  addFuzzyRule(23, Kanan_Tajam, Delta_Kiri, RightStop, LeftCepat);
+  addFuzzyRule(24, Kanan_Tajam, Delta_Lurus, RightPelan, LeftMax); //belok kanan tajam
+  addFuzzyRule(25, Kanan_Tajam, Delta_Kanan, RightPelan, LeftMax); //belok kanan tajam
 }
 
 void loop() {
@@ -252,21 +239,22 @@ void loop() {
 
           Serial.print("error : ");
           Serial.print(currentError);
-          if (currentError >= -10 && currentError <= 10){
+          if (currentError >= -15 && currentError <= 15){
             Serial.println("(Lurus)");          
           }
-          else if(currentError >= 10 && currentError <= 20){
+          else if(currentError >= 15 && currentError <= 25){
             Serial.println("(Kanan)");
           }
-          else if(currentError <= -10 && currentError <= -20){
+          else if(currentError <= -15 && currentError <= -25){
             Serial.println("(Kiri)");
           }
-          else if (currentError >= 20){
+          else if (currentError >= 25){
             Serial.println("(Kanan tajam)");
           }
-          else if (currentError >= -20){
+          else if (currentError >= -25){
             Serial.println("(Kiri tajam)");
           }
+          
           Serial.print("delta error : ");
           Serial.println(deltaError);
 
@@ -288,46 +276,66 @@ void loop() {
           int pwmValueKanan = 0;
           int pwmValueKiri = 0;
 
-          if (output1 >= 60 && output2 >= 0 && output2 <= 40) { // BelokKiriTajam
+          if (output1 >= 70 && output2 >= 20 && output2 <= 35) { // BelokKiriTajam
             Serial.println("Belok Kiri Tajam");
-            pwmValueKanan = 70; // Kecepatan motor kanan tinggi
-            pwmValueKiri = 30; // Kecepatan motor kiri sedang
+            pwmValueKanan = output1; // Kecepatan motor kanan max
+            pwmValueKiri = output2; // Kecepatan motor kiri pelan
+            Serial.print("PWM Kanan: ");
+            Serial.print(pwmValueKanan);
+            Serial.print("PWM Kiri: ");
+            Serial.println(pwmValueKiri);
             analogWrite(motorLeftPin1, 0);
             analogWrite(motorLeftPin2, abs(pwmValueKiri));
             analogWrite(motorRightPin1, abs(pwmValueKanan));
             analogWrite(motorRightPin2, 0);
 
-          } else if (output1 >= 20 && output1 <= 80 && output2 >= 0 && output2 <= 40) { // BelokKiri
+          } else if (output1 >= 55 && output1 <= 70 && output2 >= 0 && output2 <= 20) { // BelokKiri
             Serial.println("Belok Kiri");
-            pwmValueKanan = 60; // Kecepatan motor kanan sedang
-            pwmValueKiri = 15; // Kecepatan motor kiri rendah
+            pwmValueKanan = output1; // Kecepatan motor kanan cepat
+            pwmValueKiri = output2; // Kecepatan motor kiri stop
+             Serial.print("PWM Kanan: ");
+            Serial.print(pwmValueKanan);
+            Serial.print("PWM Kiri: ");
+            Serial.println(pwmValueKiri);
             analogWrite(motorLeftPin1, 0);
             analogWrite(motorLeftPin2, abs(pwmValueKiri));
             analogWrite(motorRightPin1, abs(pwmValueKanan));
             analogWrite(motorRightPin2, 0);
 
-          } else if (output1 >= 20 && output1 <= 80 && output2 >= 20 && output2 <= 80) { // MajuLurus
+          } else if (output1 >= 35 && output1 <= 55 && output2 >= 35 && output2 <= 55) { // MajuLurus
             Serial.println("Maju Lurus");
-            pwmValueKanan = 45; // Kecepatan motor kanan sedang
-            pwmValueKiri = 45; // Kecepatan motor kiri sedang
+            pwmValueKanan = output1; // Kecepatan motor kanan sedang
+            pwmValueKiri = output2; // Kecepatan motor kiri sedang
+            Serial.print("PWM Kanan: ");
+            Serial.print(pwmValueKanan);
+            Serial.print("PWM Kiri: ");
+            Serial.println(pwmValueKiri);
             analogWrite(motorLeftPin1,  abs(pwmValueKiri));
             analogWrite(motorLeftPin2, 0);
             analogWrite(motorRightPin1, abs(pwmValueKanan));
             analogWrite(motorRightPin2, 0);
 
-          } else if (output1 >= 0 && output1 <= 40 && output2 >= 20 && output2 <= 80) { // BelokKanan
+          } else if (output1 >= 0 && output1 <= 20 && output2 >= 55 && output2 <= 70) { // BelokKanan
             Serial.println("Belok Kanan");
-            pwmValueKanan = 15; // Kecepatan motor kanan rendah
-            pwmValueKiri = 60; // Kecepatan motor kiri sedang
+            pwmValueKanan = output1; // Kecepatan motor kanan stop
+            pwmValueKiri = output2; // Kecepatan motor kiri cepat
+            Serial.print("PWM Kanan: ");
+            Serial.print(pwmValueKanan);
+            Serial.print("PWM Kiri: ");
+            Serial.println(pwmValueKiri);
             analogWrite(motorLeftPin1,  abs(pwmValueKiri));
             analogWrite(motorLeftPin2, 0);
             analogWrite(motorRightPin1, 0);
             analogWrite(motorRightPin2, abs(pwmValueKanan));
 
-          } else if (output1 >= 0 && output1 <= 40 && output2 >= 60) { // BelokKananTajam
+          } else if (output1 >= 20 && output1 <= 35 && output2 >= 70) { // BelokKananTajam
             Serial.println("Belok Kanan Tajam");
-            pwmValueKanan = 30; // Kecepatan motor kanan sedang
-            pwmValueKiri = 70; // Kecepatan motor kiri tinggi
+            pwmValueKanan = output1; // Kecepatan motor kanan stop
+            pwmValueKiri = output2; // Kecepatan motor kiri cepat
+            Serial.print("PWM Kanan: ");
+            Serial.print(pwmValueKanan);
+            Serial.print("PWM Kiri: ");
+            Serial.println(pwmValueKiri);
             analogWrite(motorLeftPin1,  abs(pwmValueKiri));
             analogWrite(motorLeftPin2, 0);
             analogWrite(motorRightPin1, 0);
@@ -433,23 +441,23 @@ void kiri(int leftSpeed, int rightSpeed) {
 }
 
 void kananUJ() {
-  analogWrite(motorLeftPin1, 60);
+  analogWrite(motorLeftPin1, 70);
   analogWrite(motorLeftPin2, 0);
   analogWrite(motorRightPin1, 0);
-  analogWrite(motorRightPin2, 28);
+  analogWrite(motorRightPin2, 20);
 }
 
 void kiriUJ() {
   analogWrite(motorLeftPin1, 0);
-  analogWrite(motorLeftPin2, 28);
-  analogWrite(motorRightPin1, 60);
+  analogWrite(motorLeftPin2, 20);
+  analogWrite(motorRightPin1, 70);
   analogWrite(motorRightPin2, 0);
 }
 
 void majuU() {
-  analogWrite(motorLeftPin1, 45);
+  analogWrite(motorLeftPin1, 30);
   analogWrite(motorLeftPin2, 0);
-  analogWrite(motorRightPin1, 45);
+  analogWrite(motorRightPin1, 30);
   analogWrite(motorRightPin2, 0);
 }
 
