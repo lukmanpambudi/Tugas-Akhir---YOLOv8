@@ -242,7 +242,9 @@ def isEndOfLane(results, model, frameWarp, display=True):
         white_columns = np.where(thresholded[bottom_area_start:bottom_area_end, :] == 255)[1]
 
         if len(white_columns) > 0:
-            centerline_x = int(np.mean(white_columns))
+            centerline_x = int(np.mean(white_columns)) //menghitung rata-rata kolom di mana piksel putih berada.
+
+            //menghitung jumlah total piksel putih di sebelah kiri dan kanan dari centerline_x.
             left_sum = np.sum(thresholded[:, :centerline_x], dtype=np.int64)
             right_sum = np.sum(thresholded[:, centerline_x:], dtype=np.int64)
 
